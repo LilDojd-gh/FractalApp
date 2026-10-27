@@ -2,11 +2,14 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <string>
 #include <vector>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #include "Camera3D.h"
 #include "ColorPalette.h"
@@ -345,8 +348,7 @@ static void testCamera() {
 }
 
 static void testSettings() {
-    namespace fs = std::filesystem;
-    const std::string path = (fs::temp_directory_path() / "fractalsurf_test_settings.ini").string();
+    const std::string path = "fractalsurf_test_settings.ini";  // временный файл в рабочей папке
     FractalParams p;
     p.type = FractalType::Julia;
     p.maxIterations = 1234;
@@ -387,10 +389,10 @@ static void testSettings() {
     bool ok2 = true;
     const FractalParams h = SettingsStorage::load("/nonexistent/dir/none.ini", &ok2);
     CHECK(!ok2 && h.maxIterations == 500);
-    fs::remove(path);
+    std::remove(path.c_str());
 
     // Палитры пользователя.
-    const std::string pp = (fs::temp_directory_path() / "fractalsurf_test_pal.txt").string();
+    const std::string pp = "fractalsurf_test_pal.txt";
     {
         std::ofstream f(pp);
         f << "# comment\nЗакат | 0.0 20 0 60 | 1.0 255 240 190\nПлохая | 0.5 1 2 3\n\nОдна строка без узлов\n"
@@ -402,7 +404,7 @@ static void testSettings() {
         CHECK(pals[0].name == "Закат" && pals[0].palette.colorAt(0.0f).b == 60);
         CHECK(pals[1].palette.stops().front().pos == 0.0f);  // узлы упорядочены
     }
-    fs::remove(pp);
+    std::remove(pp.c_str());
     CHECK(SettingsStorage::loadPalettes("/nonexistent.txt").empty());
 }
 
@@ -471,6 +473,9 @@ static void testController() {
 }
 
 int main() {
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);  // русский текст в консоли Windows
+#endif
     run("HeightMap: размер, нормировка, прореживание", testHeightMap);
     run("HeightMap: нормали (плоскость, наклон, граница)", testNormals);
     run("ColorPalette: узлы, интерполяция, пресеты", testPalette);
