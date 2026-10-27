@@ -125,6 +125,7 @@ FractalParams SettingsStorage::load(const std::string& path, bool* ok) {
     get("inside_r", r); get("inside_g", g); get("inside_b", b);
     get("mode3d", m3); get("wireframe", wf); get("height_scale", p.heightScale);
 
+    const bool hasPreset = kv.find("palette") != kv.end();
     p.type = (t >= 0 && t <= 2) ? static_cast<FractalType>(t) : FractalType::Mandelbrot;
     p.interp = (interp == 1) ? InterpMode::Logarithmic : InterpMode::Linear;
     auto byte = [](int v) { return static_cast<std::uint8_t>(v < 0 ? 0 : (v > 255 ? 255 : v)); };
@@ -132,6 +133,8 @@ FractalParams SettingsStorage::load(const std::string& path, bool* ok) {
     p.mode3D = m3 != 0;
     p.wireframe = wf != 0;
     p.clamp();
+    // Если палитра в файле не задана, подбираем подходящую для выбранного фрактала.
+    if (!hasPreset) p.presetId = FractalParams::defaultPresetFor(p.type);
     return p;
 }
 
